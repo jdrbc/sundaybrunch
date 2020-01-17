@@ -43,21 +43,6 @@
     const RIGHT_CODE = 39;
     const A_CODE = 65;
     const D_CODE = 68;
-    window.onkeydown = function(e) {
-        if (e.keyCode == A_CODE || e.keyCode == LEFT_CODE) {
-          MOVING_LEFT = true;
-          MOVING_RIGHT = false;
-        } else if (e.keyCode == D_CODE || e.keyCode == RIGHT_CODE) {
-          MOVING_LEFT = false;
-          MOVING_RIGHT = true;
-        }
-    }
-
-    // Set up touch events for mobile, etc
-    canvas.addEventListener("touchstart", function (e) {
-        MOVING_LEFT = (e.touches[0].clientX < CANVAS_WIDTH / 2);
-        MOVING_RIGHT = !MOVING_LEFT;
-    }, false);
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -153,6 +138,23 @@
 
     let run = async function() {
         let player = new Player();
+
+        window.onkeydown = function(e) {
+            if (e.keyCode == A_CODE || e.keyCode == LEFT_CODE) {
+              MOVING_LEFT = true;
+              MOVING_RIGHT = false;
+            } else if (e.keyCode == D_CODE || e.keyCode == RIGHT_CODE) {
+              MOVING_LEFT = false;
+              MOVING_RIGHT = true;
+            }
+        }
+
+        // Set up touch events for mobile, etc
+        canvas.addEventListener("touchstart", function (e) {
+            MOVING_LEFT = (e.touches[0].clientX < player.x);
+            MOVING_RIGHT = !MOVING_LEFT;
+        }, false);
+
         let foods = [];
         let ctx = document.getElementById('canvas').getContext('2d');
         foodcounter = 300;
