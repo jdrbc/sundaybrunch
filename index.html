@@ -17,12 +17,181 @@
 </head>
 
 <body>
-  <!--[if IE]>
-    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-  <![endif]-->
+  <canvas id="canvas"></canvas> 
+  <div id="win" style="display: none">
+      <h1>
+        YOU WIN!
+      </h1>
+      <h1>
+        BRUNCH IS ON THE 19TH THIS MONTH!
+      </h1>
+      <img src="happy.png">
+  </div>
 
-  <!-- Add your site or application content here -->
-  <p>Hello world! This is HTML5 Boilerplate.</p>
+  <script type="text/javascript" src="./chance.js"></script>
+  <script>
+      
+    let ctx = document.getElementById('canvas').getContext('2d');
+    ctx.canvas.width  = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
+
+    const CANVAS_HEIGHT = document.getElementById("canvas").height;
+    const CANVAS_WIDTH = document.getElementById("canvas").width;
+    var MOVING_LEFT = false;
+    var MOVING_RIGHT = false;
+    const LEFT_CODE = 37;
+    const RIGHT_CODE = 39;
+    const A_CODE = 65;
+    const D_CODE = 68;
+    window.onkeydown = function(e) {
+        if (e.keyCode == A_CODE || e.keyCode == LEFT_CODE) {
+          MOVING_LEFT = true;
+          MOVING_RIGHT = false;
+        } else if (e.keyCode == D_CODE || e.keyCode == RIGHT_CODE) {
+          MOVING_LEFT = false;
+          MOVING_RIGHT = true;
+        }
+    }
+
+    // Set up touch events for mobile, etc
+    canvas.addEventListener("touchstart", function (e) {
+        MOVING_LEFT = (e.touches[0].clientX < CANVAS_WIDTH / 2);
+        MOVING_RIGHT = !MOVING_LEFT;
+    }, false);
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function movePlayer(player) {
+        if (MOVING_LEFT) {
+          player.move(-3);
+        } else if (MOVING_RIGHT) {
+          player.move(3);
+        }
+    }
+
+    function eatFoods(player, foods) {
+      foods.forEach(food => {
+        if (food.y + food.height > CANVAS_HEIGHT - player.height) {
+            if (food.x < player.x + player.width && food.x > player.x) {
+              food.eaten = true;
+              player.eat();
+            }
+        }
+      });
+    }
+
+    function dropFoods(foods) {
+      foods.forEach(food => {
+        food.y += 1;
+      });
+    }
+
+    function cleanFoods(foods) {
+      foodsToRemove = [];
+      foods.forEach(food => {
+        if (food.eaten || food.y > CANVAS_HEIGHT - food.height) {
+          foodsToRemove.push(food);
+        }
+      });
+      return foods.filter(food => {
+          return foodsToRemove.indexOf(food) == -1;
+      });
+    }
+
+    class Food {
+      constructor() {
+        this.image = new Image();
+        this.image.src = 'food.png';
+        this.width = 50;
+        this.height = 50;
+        this.x = chance.integer({ min: 0, max: CANVAS_WIDTH });
+        this.y = 0;
+        this.eaten = false;
+      }
+    }
+
+    class Player {
+      constructor() {
+        this.slimImage = new Image();
+        this.slimImage.src = 'slim.png';
+
+        this.fatImage = new Image();
+        this.fatImage.src = 'fat.png';
+
+        this.hugeImage = new Image();
+        this.hugeImage.src = 'huge.png';
+
+        this.image = this.slimImage;
+        this.energy = 1;
+
+        this.width = 144;
+        this.height = 144;
+        this.x = 0;
+        this.y = CANVAS_HEIGHT - this.height;
+      }
+
+      move(val) {
+        val = val * (5/this.energy);
+        this.x += val;
+        this.x = Math.max(Math.min(CANVAS_WIDTH - this.width, this.x), 0);
+      }
+
+      eat() {
+        this.energy++;
+        this.width++;
+        this.height++;
+        if (this.energy > 3) {
+          this.image = this.fatImage;
+        } 
+        if (this.energy > 15) {
+          this.image = this.hugeImage;
+        }
+      }
+    }
+
+    let run = async function() {
+        let player = new Player();
+        let foods = [];
+        let ctx = document.getElementById('canvas').getContext('2d');
+        foodcounter = 300;
+        player.energy = 10;
+        while(true) {
+            if (player.energy > 20) {
+              break;
+            }
+
+            await sleep(1/30);
+            movePlayer(player);
+            eatFoods(player, foods);
+
+            foodcounter++;
+            if (foodcounter > 300) {
+              foodcounter = 0;
+              foods.push(new Food());
+            }
+
+            dropFoods(foods);
+
+            foods = cleanFoods(foods);
+
+            //draw
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.drawImage(player.image, player.x, CANVAS_HEIGHT - player.height, player.width, player.height);
+            foods.forEach(food => {
+              ctx.drawImage(food.image, food.x, food.y)
+            });
+        }
+
+        document.getElementById('canvas').style.display = "none";
+
+        document.getElementById('win').style.display = "block";
+        
+    }
+    run();
+  </script>
+
 </body>
 
 </html>
