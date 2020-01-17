@@ -145,7 +145,7 @@
         if (this.energy > 3) {
           this.image = this.fatImage;
         } 
-        if (this.energy > 15) {
+        if (this.energy > 8) {
           this.image = this.hugeImage;
         }
       }
@@ -156,9 +156,8 @@
         let foods = [];
         let ctx = document.getElementById('canvas').getContext('2d');
         foodcounter = 300;
-        player.energy = 10;
         while(true) {
-            if (player.energy > 20) {
+            if (player.energy > 12) {
               break;
             }
 
