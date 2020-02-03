@@ -6,14 +6,17 @@ class GameOver extends Phaser.Scene {
 
     preload ()
     {
-        this.load.image('end', './assets/end.png');
+        this.load.image('end', 'assets/end.png');
         this.load.spritesheet('full_snowman', 'assets/full_snowman.png', { frameWidth: 32, frameHeight: 32 });
     }
 
     create ()
     {    
+        this.sound.add('sad', { loop: true }).play();
+
         // load map
         this.add.image(0, 0, 'end').setOrigin(0);
+        this.cameras.main.setBackgroundColor('#000000')
 
         this.full_snowman = this.physics.add.sprite(85, 85, 'full_snowman');
         this.anims.create({
@@ -23,6 +26,12 @@ class GameOver extends Phaser.Scene {
             repeat: -1
         });
         this.full_snowman.anims.play('full_move', true);
+
+        console.log('reload');
+        this.input.on('pointerdown', () => {
+            console.log('reload');
+            location.reload();
+        });
     }
 }
 
@@ -32,15 +41,21 @@ class Game extends Phaser.Scene {
         super({key: 'game'})
     }
 
-    preload ()
+    preload()
     {
         this.load.image('map', './assets/map.png');
         this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('snowman', 'assets/snowman.png', { frameWidth: 32, frameHeight: 32 });
     }
 
-    create ()
+    create()
     {    
+        this.sound.pauseOnBlur = false;
+
+        // load music
+        this.music = this.sound.add('music', { loop: true });
+        this.music.play();
+
         // load map
         this.add.image(0, 0, 'map').setOrigin(0);
 
@@ -57,8 +72,6 @@ class Game extends Phaser.Scene {
 
         // load player & set bounds
         this.player = this.physics.add.sprite(32, 32, 'dude');
-        this.physics.world.setBounds(0, 0, 512, 475);
-        this.player.setCollideWorldBounds(true);
 
         // so that move to pointer moves to center of sprite
         this.player.setOrigin(0.5, 0.5);
@@ -88,11 +101,9 @@ class Game extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.snowman, () => { this.youlose(); }, null, this);
 
         // init camera
-        // this.cameras.main.setZoom(4);
         this.cameras.main.centerOn(0, 0);
-        this.cameras.main.setBounds(0, 0, 512, 475);
+        this.cameras.main.setBackgroundColor('#ffffff')
         this.cameras.main.startFollow(this.player, true);
-        this.cameras.main.setDeadzone(50, 50);
     }
 
     speedUpSnowman() {
@@ -103,10 +114,19 @@ class Game extends Phaser.Scene {
 
     youlose() {
         console.log('lose');
+        this.scene.pause();
+        this.music.stop();
         this.scene.start('game_over');
     }
 
     update() {
+        // if snowman is > 200px away normal music speed,
+        // otherwise increase pitch linearly up to 50px distance
+        const dist = Phaser.Math.Distance.Between(this.snowman.x, this.snowman.y, this.player.x, this.player.y);
+        if (dist) {
+            this.music.rate = Math.min(2, Math.max(1, -.0066 * dist + 2.333));
+        }
+
         // snowman follow player
         this.physics.moveToObject(this.snowman, this.player, this.snowman.speed);
 
@@ -116,25 +136,19 @@ class Game extends Phaser.Scene {
         if (this.cursors.left.isDown)
         {
             this.player.setVelocityX(-100);
-            this.player.flipX = true;   
-            this.player.anims.play('right', true);
         }
         else if (this.cursors.right.isDown)
         {
             this.player.setVelocityX(100);
-            this.player.flipX = false;
-            this.player.anims.play('right', true);
         }
 
         if (this.cursors.up.isDown)
         {
             this.player.setVelocityY(-100);
-            this.player.anims.play('down', true);   
         }
-        else if (this. cursors.down.isDown)
+        else if (this.cursors.down.isDown)
         {
             this.player.setVelocityY(100);
-            this.player.anims.play('up', true); 
         }
 
         var pointer = this.input.activePointer;
@@ -162,6 +176,28 @@ class Game extends Phaser.Scene {
     }
 }
 
+class Intro extends Phaser.Scene {
+    constructor() {
+        super({
+            key: 'intro'
+        });
+    }
+
+    preload() {
+        this.load.audio('music', 'assets/simple_loop.ogg');
+        this.load.audio('sad', 'assets/sad.ogg');
+        this.load.image('intro', 'assets/intro.png');
+    }
+
+    create() {
+        // load map
+        this.add.image(0, 0, 'intro').setOrigin(0);
+        this.input.on('pointerdown', () => {
+            console.log('pointerdown');
+            this.scene.start('game');
+         }, this);
+    }
+}
 
 var config = {
     type: Phaser.AUTO,
@@ -172,7 +208,10 @@ var config = {
     physics: {
         default: 'arcade',
     },
-    scene: [Game, GameOver],
+    scene: [Intro, Game, GameOver],
+    audio: {
+        disableWebAudio: true
+    },
     callbacks: {
     postBoot: function (game) {
       // In v3.15, you have to override Phaser's default styles
