@@ -13,7 +13,7 @@
   },
   "homepage": "https://github.com/jdrbc/sundaybrunch#readme",
   "dependencies": {
-    "phaser": "^3.22.0"
+    "phaser": "^3.55.2"
   },
   "devDependencies": {
     "http-server": "^0.12.1"
